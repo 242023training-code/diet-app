@@ -1,0 +1,2069 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>食事記録アプリ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Noto+Sans+JP:wght@400;500;700;900&family=Quicksand:wght@500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --green: #4CAF7E;
+    --green-dark: #2E7D5C;
+    --green-light: #E0F2E9;
+    --green-pale: #F0FAF5;
+    --sage: #D4E4D0;
+    --text: #2D3D2F;
+    --text-light: #6B7B6E;
+    --text-lighter: #9BB09E;
+    --bg: #F5F8F5;
+    --white: #FFFFFF;
+    --border: #DDE8DD;
+    --red: #E55353;
+    --red-light: #FEE9E9;
+    --orange: #F59E0B;
+    --orange-light: #FEF3C7;
+    --blue: #5AA0B8;
+    --blue-light: #DCEEF4;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 4px 20px rgba(46, 125, 92, 0.08);
+    --shadow-sm: 0 2px 8px rgba(46, 125, 92, 0.06);
+  }
+
+  html, body {
+    font-family: 'BIZ UDPGothic', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    font-size: 14px;
+    line-height: 1.6;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* === SCREENS === */
+  .screen {
+    display: none;
+    min-height: 100vh;
+    padding-bottom: 80px;
+    animation: fadeIn 0.25s ease;
+  }
+  .screen.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === HEADER === */
+  .header {
+    background: var(--white);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-title {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .header-badge {
+    background: var(--green-light);
+    color: var(--green-dark);
+    font-family: 'Quicksand', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .header-back {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--green-light);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--green-dark);
+  }
+
+  /* === BOTTOM NAV === */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 200;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+    cursor: pointer;
+    color: var(--text-lighter);
+    transition: color 0.2s;
+    gap: 3px;
+  }
+  .nav-item.active { color: var(--green); }
+  .nav-item svg { width: 22px; height: 22px; }
+  .nav-label {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'Quicksand', sans-serif;
+    letter-spacing: 0.5px;
+  }
+
+  /* === CARDS === */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    margin: 0 16px 12px;
+  }
+  .card-title {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-light);
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-title::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 14px;
+    background: var(--green);
+    border-radius: 2px;
+  }
+
+  /* === HOME SCREEN === */
+  .home-hero {
+    background: linear-gradient(135deg, #E8F3E2 0%, #F0FAF5 100%);
+    padding: 24px 20px 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .home-hero::after {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: var(--green);
+    opacity: 0.08;
+    border-radius: 50%;
+  }
+  .home-date {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 12px;
+    color: var(--text-light);
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .home-greeting {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+  .home-greeting span { color: var(--green); }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin: 0 16px 12px;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: var(--radius-sm);
+    padding: 14px 10px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    border-top: 3px solid var(--green);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .stat-card:active { transform: scale(0.97); }
+  .stat-card.blue { border-top-color: var(--blue); }
+  .stat-card.orange { border-top-color: var(--orange); }
+  .stat-label {
+    font-size: 10px;
+    color: var(--text-lighter);
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--green);
+    line-height: 1;
+  }
+  .stat-card.blue .stat-value { color: var(--blue); }
+  .stat-card.orange .stat-value { color: var(--orange); }
+  .stat-unit { font-size: 10px; color: var(--text-lighter); margin-top: 2px; }
+
+  /* Progress bar */
+  .progress-wrap { margin-bottom: 10px; }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .progress-label strong { color: var(--text); }
+  .progress-bar {
+    height: 8px;
+    background: var(--green-light);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), #6FCF97);
+    border-radius: 10px;
+    transition: width 0.6s ease;
+  }
+  .progress-fill.blue { background: linear-gradient(90deg, var(--blue), #7EC8E3); }
+  .progress-fill.orange { background: linear-gradient(90deg, var(--orange), #FCD34D); }
+
+  /* Quick actions */
+  .quick-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--white);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: var(--shadow-sm);
+    text-align: left;
+    margin-bottom: 10px;
+  }
+  .quick-btn:active { transform: scale(0.98); background: var(--green-pale); }
+  .quick-icon {
+    width: 44px; height: 44px;
+    background: var(--green-light);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .quick-icon.blue { background: var(--blue-light); }
+  .quick-icon.orange { background: var(--orange-light); }
+  .quick-text { flex: 1; }
+  .quick-title {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .quick-desc { font-size: 12px; color: var(--text-light); }
+  .quick-arrow { color: var(--text-lighter); font-size: 18px; }
+
+  /* === RECORD SCREEN === */
+  .section-label {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-lighter);
+    letter-spacing: 2px;
+    padding: 16px 20px 8px;
+    text-transform: uppercase;
+  }
+
+  .input-group { margin-bottom: 16px; }
+  .input-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .input-label .emoji { font-size: 16px; }
+
+  input[type="text"], input[type="number"], textarea, select {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'BIZ UDPGothic', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(76, 175, 126, 0.12);
+  }
+  textarea { resize: none; height: 90px; line-height: 1.6; }
+
+  /* Meal tabs */
+  .meal-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px;
+    margin-bottom: 16px;
+  }
+  .meal-tab {
+    flex: 1;
+    padding: 10px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .meal-tab.active {
+    border-color: var(--green);
+    background: var(--green-light);
+  }
+  .meal-tab-emoji { font-size: 20px; display: block; margin-bottom: 2px; }
+  .meal-tab-label { font-size: 11px; font-weight: 700; color: var(--text-light); }
+  .meal-tab.active .meal-tab-label { color: var(--green-dark); }
+
+  /* Protein input row */
+  .protein-row {
+    display: grid;
+    grid-template-columns: 1fr 80px;
+    gap: 8px;
+    align-items: end;
+  }
+  .protein-unit {
+    padding: 13px 16px;
+    background: var(--green-light);
+    border-radius: var(--radius-sm);
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 700;
+    color: var(--green-dark);
+    text-align: center;
+    font-size: 14px;
+  }
+
+  /* Water input */
+  .water-slider {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .water-btn {
+    padding: 8px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    background: var(--white);
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .water-btn.active {
+    border-color: var(--blue);
+    background: var(--blue-light);
+    color: var(--blue);
+  }
+
+  /* Submit button */
+  .btn-primary {
+    width: calc(100% - 32px);
+    margin: 8px 16px 16px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(76, 175, 126, 0.35);
+  }
+  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-secondary {
+    width: calc(100% - 32px);
+    margin: 0 16px 16px;
+    padding: 14px;
+    background: var(--white);
+    color: var(--green-dark);
+    border: 1.5px solid var(--green);
+    border-radius: var(--radius);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:active { background: var(--green-light); }
+
+  /* === MY DATA SCREEN === */
+  .mydata-header {
+    background: linear-gradient(135deg, #2E7D5C 0%, #4CAF7E 100%);
+    padding: 28px 20px 24px;
+    color: white;
+    margin-bottom: 16px;
+  }
+  .mydata-name {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0.8;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .mydata-title {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 20px;
+  }
+  .mydata-numbers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .mydata-num {
+    background: rgba(255,255,255,0.15);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    backdrop-filter: blur(10px);
+  }
+  .mydata-num-label {
+    font-size: 10px;
+    opacity: 0.8;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .mydata-num-value {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .mydata-num-unit { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-row-label { color: var(--text-light); font-weight: 500; }
+  .info-row-value { font-weight: 700; color: var(--text); }
+
+  /* === 7-DAY SCREEN === */
+  .program-header {
+    background: linear-gradient(135deg, #E8F3E2, #F5F1E8);
+    padding: 20px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .program-header h2 {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .program-header p { font-size: 13px; color: var(--text-light); }
+
+  .day-card {
+    background: var(--white);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin: 0 16px 10px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    transition: all 0.2s;
+  }
+  .day-card.completed {
+    background: var(--green-pale);
+    border: 1px solid var(--green-light);
+  }
+  .day-circle {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 700; font-size: 12px;
+    color: var(--text-lighter);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .day-circle.completed {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+    font-size: 18px;
+  }
+  .day-circle.active {
+    border-color: var(--green);
+    color: var(--green);
+    background: var(--green-light);
+  }
+  .day-info { flex: 1; }
+  .day-label {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 1px;
+    margin-bottom: 3px;
+  }
+  .day-title {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .day-desc { font-size: 12px; color: var(--text-light); line-height: 1.5; }
+
+  /* === AI FEEDBACK SCREEN === */
+  .ai-intro {
+    background: linear-gradient(135deg, #2D3D2F 0%, #4CAF7E 100%);
+    padding: 28px 20px;
+    color: white;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .ai-icon { font-size: 48px; margin-bottom: 12px; }
+  .ai-intro h2 {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+  .ai-intro p { font-size: 13px; opacity: 0.85; line-height: 1.6; }
+
+  .ai-input-area {
+    padding: 0 16px;
+    margin-bottom: 16px;
+  }
+  .ai-bubble {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--green);
+    animation: slideIn 0.3s ease;
+  }
+  .ai-bubble.user {
+    border-left-color: var(--blue);
+    background: var(--blue-light);
+  }
+  .ai-bubble-label {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .ai-bubble.user .ai-bubble-label { color: var(--blue); }
+  .ai-bubble-text {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .loading-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 8px 0;
+  }
+  .loading-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-8px); }
+  }
+
+  /* === SETUP SCREEN === */
+  .setup-progress {
+    display: flex;
+    gap: 6px;
+    padding: 16px 20px;
+  }
+  .setup-step {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    transition: background 0.3s;
+  }
+  .setup-step.done { background: var(--green); }
+
+  .gender-select {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .gender-btn {
+    padding: 20px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--white);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .gender-btn.active {
+    border-color: var(--green);
+    background: var(--green-light);
+  }
+  .gender-emoji { font-size: 32px; display: block; margin-bottom: 8px; }
+  .gender-label {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .activity-options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .activity-option {
+    padding: 14px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .activity-option.active {
+    border-color: var(--green);
+    background: var(--green-light);
+  }
+  .activity-emoji { font-size: 24px; }
+  .activity-text { flex: 1; }
+  .activity-title { font-size: 14px; font-weight: 700; color: var(--text); }
+  .activity-desc { font-size: 11px; color: var(--text-light); }
+  .activity-check {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .activity-option.active .activity-check {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+    font-size: 12px;
+  }
+
+  /* Chip for tags */
+  .chip {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .chip-green { background: var(--green-light); color: var(--green-dark); }
+  .chip-blue { background: var(--blue-light); color: var(--blue); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 24px;
+    font-size: 13px;
+    font-weight: 700;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* === WORKOUT SCREEN === */
+  .workout-header {
+    background: linear-gradient(135deg, #2D3D2F 0%, #4CAF7E 100%);
+    padding: 24px 20px 20px;
+    color: white;
+    margin-bottom: 0;
+  }
+  .workout-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+  }
+  .workout-date {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 12px;
+    opacity: 0.8;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .workout-title {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+  }
+  .workout-week-badge {
+    background: rgba(255,255,255,0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .workout-week-badge span {
+    font-size: 18px;
+    margin: 0 2px;
+  }
+  .workout-week-dots {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .week-dot-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .week-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.1);
+    transition: all 0.2s;
+  }
+  .week-dot.done {
+    background: white;
+    border-color: white;
+    position: relative;
+  }
+  .week-dot.done::after {
+    content: '✓';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--green-dark);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .week-dot.today {
+    border-color: white;
+    background: rgba(255,255,255,0.3);
+  }
+  .week-dot-label {
+    font-size: 10px;
+    opacity: 0.8;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 600;
+  }
+
+  /* Part tabs */
+  .part-tabs {
+    display: flex;
+    gap: 0;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .part-tabs::-webkit-scrollbar { display: none; }
+  .part-tab {
+    flex-shrink: 0;
+    padding: 14px 20px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-lighter);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .part-tab.active {
+    color: var(--green);
+    border-bottom-color: var(--green);
+  }
+
+  /* Exercise cards */
+  .ex-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 4px solid var(--border);
+  }
+  .ex-card.done { border-left-color: var(--green); background: var(--green-pale); }
+  .ex-card:active { transform: scale(0.98); }
+  .ex-icon {
+    width: 48px; height: 48px;
+    background: var(--green-light);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 24px;
+  }
+  .ex-card.done .ex-icon { background: var(--green); }
+  .ex-info { flex: 1; }
+  .ex-name {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .ex-target {
+    font-size: 12px;
+    color: var(--text-lighter);
+  }
+  .ex-result {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+    text-align: right;
+  }
+  .ex-result.empty { color: var(--text-lighter); font-size: 18px; }
+
+  /* Exercise modal */
+  .ex-modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    backdrop-filter: blur(2px);
+  }
+  .ex-modal-backdrop.show { display: block; }
+  .ex-modal {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 430px;
+    background: var(--white);
+    border-radius: 24px 24px 0 0;
+    z-index: 400;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+  }
+  .ex-modal.show { display: block; }
+  @keyframes slideUp {
+    from { transform: translateX(-50%) translateY(100%); }
+    to { transform: translateX(-50%) translateY(0); }
+  }
+  .ex-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 0;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+  }
+  .ex-modal-title {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--text);
+  }
+  .ex-modal-close {
+    width: 32px; height: 32px;
+    background: var(--bg);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-light);
+  }
+  .ex-modal-body { padding: 16px 20px 32px; }
+  .ex-howto {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .ex-howto-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green-dark);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ex-howto-step {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.8;
+    margin-bottom: 6px;
+    display: flex;
+    gap: 8px;
+  }
+  .ex-howto-step-num {
+    background: var(--green);
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .ex-howto-point {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--orange-light);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text);
+    border-left: 3px solid var(--orange);
+  }
+  .ex-record { margin-top: 16px; }
+  .ex-record-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+  .ex-record-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  .ex-record-field { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .ex-record-label { font-size: 12px; color: var(--text-lighter); font-weight: 600; }
+  .ex-record-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+  }
+  .ex-record-input-wrap input {
+    width: 52px;
+    text-align: center;
+    font-family: 'Quicksand', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--green-dark);
+    border: none;
+    background: transparent;
+    padding: 0;
+  }
+  .ex-count-btn {
+    width: 32px; height: 32px;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 18px;
+    color: var(--green);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    transition: all 0.15s;
+  }
+  .ex-count-btn:active { background: var(--green-light); }
+  .ex-record-unit { font-size: 12px; color: var(--text-lighter); }
+  .ex-record-sep {
+    font-family: 'Quicksand', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-lighter);
+  }
+
+  /* Spacer */
+  .spacer { height: 16px; }
+</style>
+</head>
+<body>
+
+<!-- ============ SETUP SCREEN ============ -->
+<div class="screen active" id="screen-setup">
+  <div class="header">
+    <span class="header-title">初回設定</span>
+    <span class="header-badge">STEP 1 / 3</span>
+  </div>
+
+  <div class="setup-progress">
+    <div class="setup-step done" id="step1"></div>
+    <div class="setup-step" id="step2"></div>
+    <div class="setup-step" id="step3"></div>
+  </div>
+
+  <div id="setup-page-1">
+    <div class="card">
+      <div class="card-title">性別を選んでください</div>
+      <div class="gender-select">
+        <div class="gender-btn" onclick="selectGender('female', this)">
+          <span class="gender-emoji">👩</span>
+          <span class="gender-label">女性</span>
+        </div>
+        <div class="gender-btn" onclick="selectGender('male', this)">
+          <span class="gender-emoji">👨</span>
+          <span class="gender-label">男性</span>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <div class="input-label"><span class="emoji">⚖️</span>体重（kg）</div>
+        <input type="number" id="setup-weight" placeholder="例：60" min="30" max="200">
+      </div>
+
+      <div class="input-group">
+        <div class="input-label"><span class="emoji">📏</span>身長（cm）</div>
+        <input type="number" id="setup-height" placeholder="例：162" min="100" max="250">
+      </div>
+
+      <div class="input-group">
+        <div class="input-label"><span class="emoji">🎂</span>年齢</div>
+        <input type="number" id="setup-age" placeholder="例：32" min="10" max="100">
+      </div>
+
+      <div class="input-group" style="margin-bottom:0;">
+        <div class="input-label"><span class="emoji">🎯</span>目標体重（kg）</div>
+        <input type="number" id="setup-target" placeholder="例：55" min="30" max="200">
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="setupNext1()">次へ →</button>
+  </div>
+
+  <div id="setup-page-2" style="display:none;">
+    <div class="card">
+      <div class="card-title">活動量を選んでください</div>
+      <div class="activity-options">
+        <div class="activity-option" onclick="selectActivity('low', this)">
+          <span class="activity-emoji">💻</span>
+          <div class="activity-text">
+            <div class="activity-title">デスクワーク中心</div>
+            <div class="activity-desc">ほぼ座り仕事・あまり動かない</div>
+          </div>
+          <div class="activity-check">✓</div>
+        </div>
+        <div class="activity-option" onclick="selectActivity('medium', this)">
+          <span class="activity-emoji">🚶</span>
+          <div class="activity-text">
+            <div class="activity-title">適度に動く</div>
+            <div class="activity-desc">立ち仕事・通勤で歩く</div>
+          </div>
+          <div class="activity-check">✓</div>
+        </div>
+        <div class="activity-option" onclick="selectActivity('high', this)">
+          <span class="activity-emoji">🏃</span>
+          <div class="activity-text">
+            <div class="activity-title">よく体を使う</div>
+            <div class="activity-desc">運動習慣あり・肉体労働</div>
+          </div>
+          <div class="activity-check">✓</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="setupNext2()">次へ →</button>
+    <button class="btn-secondary" onclick="setupBack1()">← 戻る</button>
+  </div>
+
+  <div id="setup-page-3" style="display:none;">
+    <div class="card">
+      <div class="card-title">あなたの基本データ</div>
+      <div class="info-row">
+        <span class="info-row-label">基礎代謝</span>
+        <span class="info-row-value" id="result-bmr">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row-label">推奨摂取カロリー</span>
+        <span class="info-row-value" id="result-cal">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row-label">必要タンパク質量</span>
+        <span class="info-row-value" id="result-protein">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row-label">脂質の目安</span>
+        <span class="info-row-value" id="result-fat">—</span>
+      </div>
+      <div class="info-row" style="border-bottom:none;">
+        <span class="info-row-label">目標体重まで</span>
+        <span class="info-row-value" id="result-diff">—</span>
+      </div>
+    </div>
+    <div style="padding: 0 16px 12px;">
+      <p style="font-size:12px; color: var(--text-lighter); line-height:1.6;">
+        ※ 数値はあくまで目安です。体調に合わせて調整してください。
+      </p>
+    </div>
+    <button class="btn-primary" onclick="setupComplete()">設定完了　→ アプリを始める</button>
+    <button class="btn-secondary" onclick="setupBack2()">← 戻る</button>
+  </div>
+</div>
+
+
+<!-- ============ HOME SCREEN ============ -->
+<div class="screen" id="screen-home">
+  <div class="home-hero">
+    <div class="home-date" id="home-date">TODAY</div>
+    <div class="home-greeting">今日も<span>整えましょう</span>。</div>
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>タンパク質 <strong id="protein-today">0g</strong></span>
+        <span>目標 <strong id="protein-goal">90g</strong></span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="protein-bar" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="progress-wrap" style="margin-bottom:0;">
+      <div class="progress-label">
+        <span>水分 <strong id="water-today">0L</strong></span>
+        <span>目標 <strong>2L</strong></span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill blue" id="water-bar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card" onclick="showScreen('screen-mydata')">
+      <div class="stat-label">カロリー目安</div>
+      <div class="stat-value" id="stat-cal">1,280</div>
+      <div class="stat-unit">kcal/日</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">今日の記録</div>
+      <div class="stat-value" id="stat-meals">0</div>
+      <div class="stat-unit">食 入力済み</div>
+    </div>
+    <div class="stat-card orange">
+      <div class="stat-label">7日間</div>
+      <div class="stat-value" id="stat-days">0</div>
+      <div class="stat-unit">日 完了</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">クイックアクション</div>
+    <button class="quick-btn" onclick="showScreen('screen-record')">
+      <div class="quick-icon">🍽️</div>
+      <div class="quick-text">
+        <div class="quick-title">食事を記録する</div>
+        <div class="quick-desc">朝・昼・夜の食事を入力</div>
+      </div>
+      <span class="quick-arrow">›</span>
+    </button>
+    <button class="quick-btn" onclick="showScreen('screen-workout')" style="margin-bottom:0;">
+      <div class="quick-icon blue">💪</div>
+      <div class="quick-text">
+        <div class="quick-title">家トレを記録する</div>
+        <div class="quick-desc">部位別・種目別に回数×セットを記録</div>
+      </div>
+      <span class="quick-arrow">›</span>
+    </button>
+    <button class="quick-btn" onclick="showScreen('screen-program')" style="margin-bottom:0;">
+      <div class="quick-icon orange">📅</div>
+      <div class="quick-text">
+        <div class="quick-title">7日間プログラム</div>
+        <div class="quick-desc">今日のチェックを入れる</div>
+      </div>
+      <span class="quick-arrow">›</span>
+    </button>
+  </div>
+</div>
+
+
+<!-- ============ RECORD SCREEN ============ -->
+<div class="screen" id="screen-record">
+  <div class="header">
+    <div class="header-back" onclick="showScreen('screen-home')">‹</div>
+    <span class="header-title">食事を記録する</span>
+    <span></span>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="meal-tabs">
+    <div class="meal-tab active" onclick="selectMeal('morning', this)">
+      <span class="meal-tab-emoji">🌅</span>
+      <span class="meal-tab-label">朝食</span>
+    </div>
+    <div class="meal-tab" onclick="selectMeal('lunch', this)">
+      <span class="meal-tab-emoji">☀️</span>
+      <span class="meal-tab-label">昼食</span>
+    </div>
+    <div class="meal-tab" onclick="selectMeal('dinner', this)">
+      <span class="meal-tab-emoji">🌙</span>
+      <span class="meal-tab-label">夕食</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="input-group">
+      <div class="input-label"><span class="emoji">📝</span>食べたもの</div>
+      <textarea id="meal-content" placeholder="例：サラダチキン、おにぎり（梅）、カットサラダ"></textarea>
+    </div>
+
+    <div class="input-group">
+      <div class="input-label"><span class="emoji">💪</span>タンパク質（g）</div>
+      <div class="protein-row">
+        <input type="number" id="meal-protein" placeholder="例：25" min="0" max="200">
+        <div class="protein-unit">g</div>
+      </div>
+    </div>
+
+    <div class="input-group" style="margin-bottom:0;">
+      <div class="input-label"><span class="emoji">🔥</span>カロリー（kcal）</div>
+      <input type="number" id="meal-calories" placeholder="例：400（不明な場合は空欄OK）" min="0">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">水分補給（今日の合計）</div>
+    <div class="water-slider">
+      <div class="water-btn" onclick="selectWater(0.5, this)">0.5L</div>
+      <div class="water-btn" onclick="selectWater(1.0, this)">1.0L</div>
+      <div class="water-btn" onclick="selectWater(1.5, this)">1.5L</div>
+      <div class="water-btn" onclick="selectWater(2.0, this)">2.0L</div>
+      <div class="water-btn" onclick="selectWater(2.5, this)">2.5L+</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">今日のメモ</div>
+    <textarea id="meal-memo" placeholder="気づき、体調、一言など。何でもOK。"></textarea>
+  </div>
+
+  <button class="btn-primary" onclick="saveMeal()">記録を保存する ✓</button>
+</div>
+
+
+<!-- ============ MY DATA SCREEN ============ -->
+<div class="screen" id="screen-mydata">
+  <div class="mydata-header">
+    <div class="mydata-name">MY DATA</div>
+    <div class="mydata-title">あなたの食事設計</div>
+    <div class="mydata-numbers">
+      <div class="mydata-num">
+        <div class="mydata-num-label">推奨カロリー</div>
+        <div class="mydata-num-value" id="my-cal">1,280</div>
+        <div class="mydata-num-unit">kcal / 日</div>
+      </div>
+      <div class="mydata-num">
+        <div class="mydata-num-label">必要タンパク質</div>
+        <div class="mydata-num-value" id="my-protein">90</div>
+        <div class="mydata-num-unit">g / 日</div>
+      </div>
+      <div class="mydata-num">
+        <div class="mydata-num-label">基礎代謝</div>
+        <div class="mydata-num-value" id="my-bmr">1,200</div>
+        <div class="mydata-num-unit">kcal</div>
+      </div>
+      <div class="mydata-num">
+        <div class="mydata-num-label">脂質の目安</div>
+        <div class="mydata-num-value" id="my-fat">43</div>
+        <div class="mydata-num-unit">g 以下 / 日</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">プロフィール</div>
+    <div class="info-row">
+      <span class="info-row-label">性別</span>
+      <span class="info-row-value" id="my-gender">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">身長</span>
+      <span class="info-row-value" id="my-height">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">年齢</span>
+      <span class="info-row-value" id="my-age">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">体重</span>
+      <span class="info-row-value" id="my-weight">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">目標体重</span>
+      <span class="info-row-value" id="my-target">—</span>
+    </div>
+    <div class="info-row" style="border-bottom:none;">
+      <span class="info-row-label">活動レベル</span>
+      <span class="info-row-value" id="my-activity">—</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">1食あたりの目安</div>
+    <div class="info-row">
+      <span class="info-row-label">タンパク質</span>
+      <span class="info-row-value" id="my-protein-meal">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-row-label">カロリー</span>
+      <span class="info-row-value" id="my-cal-meal">—</span>
+    </div>
+    <div class="info-row" style="border-bottom:none;">
+      <span class="info-row-label">水分（1日）</span>
+      <span class="info-row-value">1.5〜2.0L</span>
+    </div>
+  </div>
+
+  <div style="padding: 0 16px 16px;">
+    <p style="font-size:11px; color:var(--text-lighter); line-height:1.7;">
+      ※ 数値はnoteで解説した計算式をもとに算出しています。<br>
+      体調や状況に合わせて調整してください。
+    </p>
+  </div>
+</div>
+
+
+<!-- ============ 7-DAY PROGRAM SCREEN ============ -->
+<div class="screen" id="screen-program">
+  <div class="program-header">
+    <h2>🗓️ 7日間プログラム</h2>
+    <p>「やり切る」より「慣れる」を目指しましょう</p>
+  </div>
+
+  <div id="day-cards"></div>
+</div>
+
+
+<!-- ============ WORKOUT SCREEN ============ -->
+<div class="screen" id="screen-workout">
+  <div class="workout-header">
+    <div class="workout-header-top">
+      <div>
+        <div class="workout-date" id="workout-date">TODAY</div>
+        <div class="workout-title">家トレ記録</div>
+      </div>
+      <div class="workout-week-badge">
+        今週 <span id="workout-week-count">0</span> 回
+      </div>
+    </div>
+    <!-- Weekly progress dots -->
+    <div class="workout-week-dots">
+      <div class="week-dot-wrap" id="week-dot-0"><div class="week-dot"></div><div class="week-dot-label">月</div></div>
+      <div class="week-dot-wrap" id="week-dot-1"><div class="week-dot"></div><div class="week-dot-label">火</div></div>
+      <div class="week-dot-wrap" id="week-dot-2"><div class="week-dot"></div><div class="week-dot-label">水</div></div>
+      <div class="week-dot-wrap" id="week-dot-3"><div class="week-dot"></div><div class="week-dot-label">木</div></div>
+      <div class="week-dot-wrap" id="week-dot-4"><div class="week-dot"></div><div class="week-dot-label">金</div></div>
+      <div class="week-dot-wrap" id="week-dot-5"><div class="week-dot"></div><div class="week-dot-label">土</div></div>
+      <div class="week-dot-wrap" id="week-dot-6"><div class="week-dot"></div><div class="week-dot-label">日</div></div>
+    </div>
+  </div>
+
+  <!-- Body part tabs -->
+  <div class="part-tabs" id="part-tabs">
+    <div class="part-tab active" onclick="selectPart(0, this)">胸</div>
+    <div class="part-tab" onclick="selectPart(1, this)">背中</div>
+    <div class="part-tab" onclick="selectPart(2, this)">お腹</div>
+    <div class="part-tab" onclick="selectPart(3, this)">二の腕</div>
+    <div class="part-tab" onclick="selectPart(4, this)">脚</div>
+  </div>
+
+  <!-- Exercise list -->
+  <div id="exercise-list" style="padding: 0 16px 24px;"></div>
+
+  <!-- Exercise detail modal -->
+  <div class="ex-modal-backdrop" id="ex-modal-backdrop" onclick="closeExModal()"></div>
+  <div class="ex-modal" id="ex-modal">
+    <div class="ex-modal-header">
+      <div class="ex-modal-title" id="ex-modal-title"></div>
+      <div class="ex-modal-close" onclick="closeExModal()">✕</div>
+    </div>
+    <div class="ex-modal-body">
+      <!-- How to -->
+      <div class="ex-howto" id="ex-howto"></div>
+      <!-- Record input -->
+      <div class="ex-record">
+        <div class="ex-record-title">📝 今日の記録</div>
+        <div class="ex-record-row">
+          <div class="ex-record-field">
+            <div class="ex-record-label">回数</div>
+            <div class="ex-record-input-wrap">
+              <button class="ex-count-btn" onclick="adjustCount('reps', -1)">−</button>
+              <input type="number" id="ex-reps" value="10" min="1" max="200">
+              <button class="ex-count-btn" onclick="adjustCount('reps', 1)">＋</button>
+            </div>
+            <div class="ex-record-unit">回</div>
+          </div>
+          <div class="ex-record-sep">×</div>
+          <div class="ex-record-field">
+            <div class="ex-record-label">セット</div>
+            <div class="ex-record-input-wrap">
+              <button class="ex-count-btn" onclick="adjustCount('sets', -1)">−</button>
+              <input type="number" id="ex-sets" value="3" min="1" max="20">
+              <button class="ex-count-btn" onclick="adjustCount('sets', 1)">＋</button>
+            </div>
+            <div class="ex-record-unit">セット</div>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="saveExercise()" style="margin: 12px 0 0;">記録する ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <div class="nav-item active" onclick="switchNav('home', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    <span class="nav-label">ホーム</span>
+  </div>
+  <div class="nav-item" onclick="switchNav('record', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+    <span class="nav-label">記録</span>
+  </div>
+  <div class="nav-item" onclick="switchNav('program', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    <span class="nav-label">7日間</span>
+  </div>
+  <div class="nav-item" onclick="switchNav('workout', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M6.5 6.5h11M6.5 17.5h11M3 12h18M7 3l-2 4M17 3l2 4M7 21l-2-4M17 21l2-4"/>
+    </svg>
+    <span class="nav-label">筋トレ</span>
+  </div>
+  <div class="nav-item" onclick="switchNav('mydata', this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+    <span class="nav-label">マイデータ</span>
+  </div>
+</nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== GAS連携設定 =====
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxGMBRUmQ3vevNQc0Y1y2He9IhoPrxI9Km8s0Z8S_c6a4-86KbOffSjd3ua2VctrYFO/exec';
+const USER_ID = 'demo_user_001'; // LIFF化後はliff.getProfile().userId に変更
+
+// GASにデータを送信する共通関数
+async function sendToGAS(payload) {
+  try {
+    const response = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    return result;
+  } catch (e) {
+    console.log('GAS送信エラー（オフラインまたはURL未設定）:', e);
+    return { success: false, message: e.toString() };
+  }
+}
+
+// ===== STATE =====
+const state = {
+  gender: null,
+  weight: 0,
+  height: 0,
+  age: 0,
+  targetWeight: 0,
+  activity: null,
+  bmr: 0,
+  dailyCal: 0,
+  dailyProtein: 0,
+  dailyFat: 0,
+  proteinToday: 0,
+  waterToday: 0,
+  mealsToday: 0,
+  currentMeal: 'morning',
+  currentWater: 0,
+  dayProgress: [false, false, false, false, false, false, false],
+  isSetupDone: false
+};
+
+const activityMap = { low: 1.4, medium: 1.6, high: 1.8 };
+const activityLabel = { low: 'デスクワーク中心', medium: '適度に動く', high: 'よく体を使う' };
+const genderLabel = { female: '女性', male: '男性' };
+
+const dayData = [
+  { label: 'DAY 1', title: '整える1食', desc: '1食だけタンパク質を意識して食べる' },
+  { label: 'DAY 2', title: '毎食意識', desc: '朝昼夜すべてにタンパク質を入れる' },
+  { label: 'DAY 3', title: '固定パターン', desc: '迷ったら神7から選ぶだけ' },
+  { label: 'DAY 4', title: '脂質を意識', desc: '揚げ物を1つ別のものに置き換える' },
+  { label: 'DAY 5', title: '炭水化物', desc: '毎食に炭水化物を入れて食べる' },
+  { label: 'DAY 6', title: '繰り返す', desc: 'うまくいったパターンをコピー' },
+  { label: 'DAY 7', title: '振り返り', desc: '来週の食事パターンを決める' }
+];
+
+// ===== SETUP =====
+function selectGender(gender, el) {
+  state.gender = gender;
+  document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function selectActivity(level, el) {
+  state.activity = level;
+  document.querySelectorAll('.activity-option').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setupNext1() {
+  const w = parseFloat(document.getElementById('setup-weight').value);
+  const h = parseFloat(document.getElementById('setup-height').value);
+  const a = parseFloat(document.getElementById('setup-age').value);
+  const t = parseFloat(document.getElementById('setup-target').value);
+  if (!state.gender) { showToast('性別を選んでください'); return; }
+  if (!w || w < 30 || w > 200) { showToast('体重を正しく入力してください'); return; }
+  if (!h || h < 100 || h > 250) { showToast('身長を正しく入力してください'); return; }
+  if (!a || a < 10 || a > 100) { showToast('年齢を正しく入力してください'); return; }
+  if (!t || t < 30 || t > 200) { showToast('目標体重を正しく入力してください'); return; }
+  state.weight = w;
+  state.height = h;
+  state.age = a;
+  state.targetWeight = t;
+  document.getElementById('setup-page-1').style.display = 'none';
+  document.getElementById('setup-page-2').style.display = 'block';
+  document.getElementById('step2').classList.add('done');
+  document.querySelector('.header-badge').textContent = 'STEP 2 / 3';
+}
+
+function setupNext2() {
+  if (!state.activity) { showToast('活動量を選んでください'); return; }
+  calcNumbers();
+  document.getElementById('setup-page-2').style.display = 'none';
+  document.getElementById('setup-page-3').style.display = 'block';
+  document.getElementById('step3').classList.add('done');
+  document.querySelector('.header-badge').textContent = 'STEP 3 / 3';
+}
+
+function setupBack1() {
+  document.getElementById('setup-page-2').style.display = 'none';
+  document.getElementById('setup-page-1').style.display = 'block';
+  document.getElementById('step2').classList.remove('done');
+  document.querySelector('.header-badge').textContent = 'STEP 1 / 3';
+}
+
+function setupBack2() {
+  document.getElementById('setup-page-3').style.display = 'none';
+  document.getElementById('setup-page-2').style.display = 'block';
+  document.getElementById('step3').classList.remove('done');
+  document.querySelector('.header-badge').textContent = 'STEP 2 / 3';
+}
+
+function calcNumbers() {
+  // Harris-Benedict equation（より正確な基礎代謝計算）
+  let bmr;
+  if (state.gender === 'female') {
+    bmr = 655 + (9.6 * state.weight) + (1.8 * state.height) - (4.7 * state.age);
+  } else {
+    bmr = 66 + (13.7 * state.weight) + (5.0 * state.height) - (6.8 * state.age);
+  }
+  state.bmr = Math.round(bmr);
+  const tdee = Math.round(state.bmr * activityMap[state.activity]);
+  state.dailyCal = tdee - 400;
+  state.dailyProtein = Math.round(state.weight * 1.75);
+  state.dailyFat = Math.round(state.dailyCal * 0.25 / 9);
+
+  document.getElementById('result-bmr').textContent = state.bmr.toLocaleString() + ' kcal';
+  document.getElementById('result-cal').textContent = state.dailyCal.toLocaleString() + ' kcal';
+  document.getElementById('result-protein').textContent = state.dailyProtein + ' g';
+  document.getElementById('result-fat').textContent = state.dailyFat + ' g 以下';
+  const diff = (state.weight - state.targetWeight).toFixed(1);
+  document.getElementById('result-diff').textContent = diff > 0 ? `あと ${diff} kg` : '目標達成済み！';
+}
+
+function setupComplete() {
+  state.isSetupDone = true;
+  updateMyData();
+  updateHomeStats();
+  buildDayCards();
+  setHomeDate();
+  initWorkout();
+  document.querySelector('.bottom-nav').style.display = 'flex';
+  showScreen('screen-home');
+  showToast('設定完了！食事を整えていきましょう ✓');
+
+  // GASにユーザー情報を保存
+  sendToGAS({
+    action: 'saveUser',
+    userId: USER_ID,
+    gender: state.gender,
+    height: state.height,
+    age: state.age,
+    weight: state.weight,
+    targetWeight: state.targetWeight,
+    activityLabel: activityLabel[state.activity],
+    dailyCal: state.dailyCal,
+    dailyProtein: state.dailyProtein,
+    bmr: state.bmr
+  });
+}
+
+// ===== NAVIGATION =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function switchNav(name, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  showScreen('screen-' + name);
+}
+
+// ===== HOME =====
+function setHomeDate() {
+  const now = new Date();
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('home-date').textContent =
+    `${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+}
+
+function updateHomeStats() {
+  document.getElementById('stat-cal').textContent = state.dailyCal.toLocaleString();
+  document.getElementById('stat-meals').textContent = state.mealsToday;
+  document.getElementById('stat-days').textContent = state.dayProgress.filter(Boolean).length;
+
+  document.getElementById('protein-goal').textContent = state.dailyProtein + 'g';
+  document.getElementById('protein-today').textContent = state.proteinToday + 'g';
+  const proteinPct = Math.min(100, Math.round(state.proteinToday / state.dailyProtein * 100));
+  document.getElementById('protein-bar').style.width = proteinPct + '%';
+
+  document.getElementById('water-today').textContent = state.waterToday + 'L';
+  const waterPct = Math.min(100, Math.round(state.waterToday / 2 * 100));
+  document.getElementById('water-bar').style.width = waterPct + '%';
+}
+
+// ===== RECORD =====
+function selectMeal(meal, el) {
+  state.currentMeal = meal;
+  document.querySelectorAll('.meal-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function selectWater(amount, el) {
+  state.currentWater = amount;
+  document.querySelectorAll('.water-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function saveMeal() {
+  const content = document.getElementById('meal-content').value;
+  const protein = parseFloat(document.getElementById('meal-protein').value) || 0;
+  const calories = parseFloat(document.getElementById('meal-calories').value) || 0;
+  const memo = document.getElementById('meal-memo').value;
+
+  if (!content.trim()) { showToast('食べたものを入力してください'); return; }
+
+  state.proteinToday += protein;
+  if (state.currentWater > 0) state.waterToday = state.currentWater;
+  state.mealsToday++;
+
+  updateHomeStats();
+
+  // GASに食事記録を保存
+  sendToGAS({
+    action: 'saveMeal',
+    userId: USER_ID,
+    mealType: state.currentMeal,
+    content: content,
+    protein: protein,
+    calories: calories,
+    water: state.currentWater || '',
+    memo: memo
+  });
+
+  // Clear form
+  document.getElementById('meal-content').value = '';
+  document.getElementById('meal-protein').value = '';
+  document.getElementById('meal-calories').value = '';
+  document.getElementById('meal-memo').value = '';
+  document.querySelectorAll('.water-btn').forEach(b => b.classList.remove('active'));
+  state.currentWater = 0;
+
+  showToast('記録を保存しました ✓');
+  setTimeout(() => showScreen('screen-home'), 1200);
+}
+
+// ===== MY DATA =====
+function updateMyData() {
+  document.getElementById('my-cal').textContent = state.dailyCal.toLocaleString();
+  document.getElementById('my-protein').textContent = state.dailyProtein;
+  document.getElementById('my-bmr').textContent = state.bmr.toLocaleString();
+  document.getElementById('my-fat').textContent = state.dailyFat;
+  document.getElementById('my-gender').textContent = genderLabel[state.gender] || '—';
+  document.getElementById('my-height').textContent = state.height + ' cm';
+  document.getElementById('my-age').textContent = state.age + ' 歳';
+  document.getElementById('my-weight').textContent = state.weight + ' kg';
+  document.getElementById('my-target').textContent = state.targetWeight + ' kg';
+  document.getElementById('my-activity').textContent = activityLabel[state.activity] || '—';
+  document.getElementById('my-protein-meal').textContent = Math.round(state.dailyProtein / 3) + '〜' + Math.round(state.dailyProtein / 3 * 1.2) + 'g';
+  document.getElementById('my-cal-meal').textContent = Math.round(state.dailyCal / 3) + '〜' + Math.round(state.dailyCal / 3 * 1.1) + 'kcal';
+  document.getElementById('stat-cal').textContent = state.dailyCal.toLocaleString();
+}
+
+// ===== 7-DAY PROGRAM =====
+function buildDayCards() {
+  const container = document.getElementById('day-cards');
+  container.innerHTML = '';
+  dayData.forEach((day, i) => {
+    const completed = state.dayProgress[i];
+    const isActive = !completed && state.dayProgress.slice(0, i).every(Boolean);
+    const div = document.createElement('div');
+    div.className = 'day-card' + (completed ? ' completed' : '');
+    div.innerHTML = `
+      <div class="day-circle ${completed ? 'completed' : isActive ? 'active' : ''}"
+           onclick="toggleDay(${i})">
+        ${completed ? '✓' : i + 1}
+      </div>
+      <div class="day-info">
+        <div class="day-label">${day.label}</div>
+        <div class="day-title">${day.title}</div>
+        <div class="day-desc">${day.desc}</div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function toggleDay(index) {
+  state.dayProgress[index] = !state.dayProgress[index];
+  buildDayCards();
+  updateHomeStats();
+  if (state.dayProgress[index]) showToast(`DAY ${index+1} 完了！ ✓`);
+}
+
+// ===== WORKOUT =====
+const workoutData = [
+  // 胸
+  [
+    {
+      name: 'プッシュアップ', emoji: '💪', target: '大胸筋・三角筋・上腕三頭筋',
+      steps: ['手を肩幅より少し広めに置き、うつ伏せになる', '体を一直線に保ちながら、胸が床に近づくまでゆっくり下ろす', '肘を伸ばして元の位置に戻る'],
+      point: '肘は体に対して45度の角度を保つ。お腹が落ちないように体幹を意識。'
+    },
+    {
+      name: 'ワイドプッシュアップ', emoji: '🤸', target: '大胸筋外側・三角筋前部',
+      steps: ['手を肩幅の1.5〜2倍に広げて床に置く', 'ゆっくり体を下ろし、胸が床に近づいたら止める', '肘を伸ばして元の位置に戻る'],
+      point: '手を広く置くことで大胸筋の外側に効く。腰が浮かないように注意。'
+    }
+  ],
+  // 背中
+  [
+    {
+      name: 'バックエクステンション', emoji: '🏋️', target: '脊柱起立筋・腰背部',
+      steps: ['うつ伏せに寝て、手を頭の後ろ（または前方）に置く', '上半身をゆっくり持ち上げる（床から10〜15cm程度）', 'ゆっくりと元の位置に戻す'],
+      point: '首を無理に反らせず、背中全体で持ち上げるイメージで。'
+    },
+    {
+      name: 'スーパーマン', emoji: '🦸', target: '脊柱起立筋・臀筋・ハムストリングス',
+      steps: ['うつ伏せに寝て、手足を伸ばす', '腕と脚を同時に床から持ち上げ、2〜3秒キープする', 'ゆっくりと元の位置に戻す'],
+      point: '腕と脚を対角線で持ち上げると体幹にも効果的。首は自然な位置を保つ。'
+    }
+  ],
+  // お腹
+  [
+    {
+      name: 'クランチ', emoji: '🔥', target: '腹直筋上部',
+      steps: ['仰向けに寝て膝を曲げ、手を頭の後ろまたは胸の前に置く', '息を吐きながら肩甲骨が床から離れるまで上体を起こす', 'ゆっくりと元に戻す（完全には下げない）'],
+      point: '首で引っ張らず、お腹の力で起こすイメージで。腰は床につけたまま。'
+    },
+    {
+      name: 'レッグレイズ', emoji: '🦵', target: '腹直筋下部・腸腰筋',
+      steps: ['仰向けに寝て、手を体の横または腰の下に置く', '脚をまっすぐ伸ばしたまま、90度まで持ち上げる', 'ゆっくりと床スレスレまで下ろす（床につけない）'],
+      point: '腰が反らないよう、腹筋に力を入れて腰を床に押しつけるイメージで。'
+    },
+    {
+      name: 'プランク', emoji: '🧘', target: '体幹全体・腹横筋・脊柱起立筋',
+      steps: ['肘を肩の真下について、うつ伏せの状態になる', '体を一直線に保ちながら、その姿勢をキープする', '20秒〜60秒キープ（慣れてきたら時間を延ばす）'],
+      point: 'お尻が上がったり下がったりしないよう、一直線を意識。呼吸は止めない。'
+    }
+  ],
+  // 二の腕
+  [
+    {
+      name: 'ナロープッシュアップ', emoji: '💪', target: '上腕三頭筋・大胸筋内側',
+      steps: ['手を肩幅より狭く（胸の中央あたり）に置く', '肘を体に沿わせながらゆっくり下ろす', '肘を伸ばして元の位置に戻す'],
+      point: '肘が外に開かないよう脇を締めるのがポイント。二の腕の裏側が効いている感覚で。'
+    },
+    {
+      name: 'ディップス', emoji: '🪑', target: '上腕三頭筋・大胸筋下部',
+      steps: ['椅子や台に手をかけ、体を前に出して腰を浮かせる', '肘を曲げながらお尻を床に向かって下ろす', '肘を伸ばして元の位置に戻す'],
+      point: '体が前に傾くほど大胸筋に効き、垂直に近いほど三頭筋に効く。'
+    }
+  ],
+  // 脚
+  [
+    {
+      name: 'スクワット', emoji: '🏃', target: '大腿四頭筋・大臀筋・ハムストリングス',
+      steps: ['足を肩幅に開いて立つ。つま先は少し外側に向ける', '膝がつま先より前に出ないよう意識しながら腰を落とす', '太ももが床と平行になったら、膝を伸ばして元の位置に戻る'],
+      point: '背筋を伸ばし、かかとが浮かないようにする。膝はつま先と同じ方向に向ける。'
+    },
+    {
+      name: 'ランジ', emoji: '🦵', target: '大腿四頭筋・大臀筋・ハムストリングス',
+      steps: ['足を腰幅に開いて立つ', '片足を大きく前に踏み出し、前膝が90度になるまで腰を落とす', '踏み出した足で地面を押して元の位置に戻る'],
+      point: '前膝がつま先より前に出ないよう注意。上体は垂直に保つ。'
+    },
+    {
+      name: 'ヒップリフト', emoji: '🍑', target: '大臀筋・ハムストリングス・体幹',
+      steps: ['仰向けに寝て、膝を曲げて足を床につける', '腰をゆっくり持ち上げ、肩・腰・膝が一直線になるまで上げる', '2〜3秒キープしてゆっくり下ろす（床につけない）'],
+      point: 'お尻をしっかり締めながら持ち上げる。腰が反りすぎないよう注意。'
+    }
+  ]
+];
+
+let currentPart = 0;
+let currentExerciseIdx = 0;
+const workoutLog = {}; // { 'exerciseName': { reps, sets, done } }
+const weekWorkout = [false,false,false,false,false,false,false];
+
+function selectPart(idx, el) {
+  currentPart = idx;
+  document.querySelectorAll('.part-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderExercises();
+}
+
+function renderExercises() {
+  const list = document.getElementById('exercise-list');
+  list.innerHTML = '';
+  const exercises = workoutData[currentPart];
+  exercises.forEach((ex, i) => {
+    const log = workoutLog[ex.name];
+    const done = log && log.done;
+    const div = document.createElement('div');
+    div.className = 'ex-card' + (done ? ' done' : '');
+    div.onclick = () => openExModal(currentPart, i);
+    div.innerHTML = `
+      <div class="ex-icon">${ex.emoji}</div>
+      <div class="ex-info">
+        <div class="ex-name">${ex.name}</div>
+        <div class="ex-target">${ex.target}</div>
+      </div>
+      <div class="ex-result ${done ? '' : 'empty'}">
+        ${done ? `${log.reps}回<br>×${log.sets}set` : '›'}
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function openExModal(partIdx, exIdx) {
+  currentExerciseIdx = exIdx;
+  const ex = workoutData[partIdx][exIdx];
+  const log = workoutLog[ex.name];
+
+  document.getElementById('ex-modal-title').textContent = ex.name;
+
+  // How to steps
+  let stepsHtml = `<div class="ex-howto-title">📋 やり方</div>`;
+  ex.steps.forEach((step, i) => {
+    stepsHtml += `<div class="ex-howto-step"><span class="ex-howto-step-num">${i+1}</span><span>${step}</span></div>`;
+  });
+  stepsHtml += `<div class="ex-howto-point">⚡ ポイント：${ex.point}</div>`;
+  document.getElementById('ex-howto').innerHTML = stepsHtml;
+
+  // Pre-fill if already recorded
+  document.getElementById('ex-reps').value = log ? log.reps : 10;
+  document.getElementById('ex-sets').value = log ? log.sets : 3;
+
+  document.getElementById('ex-modal-backdrop').classList.add('show');
+  document.getElementById('ex-modal').classList.add('show');
+}
+
+function closeExModal() {
+  document.getElementById('ex-modal-backdrop').classList.remove('show');
+  document.getElementById('ex-modal').classList.remove('show');
+}
+
+function adjustCount(field, delta) {
+  const input = document.getElementById(field === 'reps' ? 'ex-reps' : 'ex-sets');
+  const min = field === 'reps' ? 1 : 1;
+  const max = field === 'reps' ? 200 : 20;
+  const val = parseInt(input.value) + delta;
+  input.value = Math.min(max, Math.max(min, val));
+}
+
+function saveExercise() {
+  const ex = workoutData[currentPart][currentExerciseIdx];
+  const reps = parseInt(document.getElementById('ex-reps').value) || 10;
+  const sets = parseInt(document.getElementById('ex-sets').value) || 3;
+  workoutLog[ex.name] = { reps, sets, done: true };
+
+  // Mark today as workout day
+  const today = new Date().getDay();
+  const idx = today === 0 ? 6 : today - 1;
+  weekWorkout[idx] = true;
+  updateWeekDots();
+  updateWeekCount();
+
+  // GASに筋トレ記録を保存
+  const partNames = ['胸', '背中', 'お腹', '二の腕', '脚'];
+  sendToGAS({
+    action: 'saveWorkout',
+    userId: USER_ID,
+    part: partNames[currentPart],
+    exerciseName: ex.name,
+    reps: reps,
+    sets: sets
+  });
+
+  closeExModal();
+  renderExercises();
+  showToast(`${ex.name}を記録しました ✓`);
+}
+
+function updateWeekDots() {
+  const today = new Date().getDay();
+  const todayIdx = today === 0 ? 6 : today - 1;
+  weekWorkout.forEach((done, i) => {
+    const dot = document.querySelector(`#week-dot-${i} .week-dot`);
+    if (!dot) return;
+    dot.classList.remove('done', 'today');
+    if (done) dot.classList.add('done');
+    else if (i === todayIdx) dot.classList.add('today');
+  });
+}
+
+function updateWeekCount() {
+  const count = weekWorkout.filter(Boolean).length;
+  const el = document.getElementById('workout-week-count');
+  if (el) el.textContent = count;
+}
+
+function initWorkout() {
+  const now = new Date();
+  const days = ['日','月','火','水','木','金','土'];
+  const el = document.getElementById('workout-date');
+  if (el) el.textContent = `${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+  updateWeekDots();
+  updateWeekCount();
+  renderExercises();
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ===== INIT =====
+document.querySelector('.bottom-nav').style.display = 'none';
+</script>
+</body>
+</html>
