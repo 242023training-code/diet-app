@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>食事記録アプリ</title>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Noto+Sans+JP:wght@400;500;700;900&family=Quicksand:wght@500;600;700&display=swap');
 
@@ -1554,7 +1555,8 @@
 <script>
 // ===== GAS連携設定 =====
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxGMBRUmQ3vevNQc0Y1y2He9IhoPrxI9Km8s0Z8S_c6a4-86KbOffSjd3ua2VctrYFO/exec';
-const USER_ID = 'demo_user_001'; // LIFF化後はliff.getProfile().userId に変更
+const LIFF_ID = '2010049772-McwJESKk';
+let USER_ID = 'demo_user_001'; // LIFF初期化後にLINEユーザーIDに上書きされる
 
 // GASにデータを送信する共通関数
 async function sendToGAS(payload) {
@@ -2064,6 +2066,28 @@ function showToast(msg) {
 
 // ===== INIT =====
 document.querySelector('.bottom-nav').style.display = 'none';
+
+// LIFF初期化
+liff.init({ liffId: LIFF_ID })
+  .then(() => {
+    if (liff.isLoggedIn()) {
+      // LINEアプリ内で開いた場合：LINEユーザーIDを取得
+      liff.getProfile().then(profile => {
+        USER_ID = profile.userId;
+        console.log('LINEユーザーID取得:', USER_ID);
+      }).catch(err => {
+        console.log('プロフィール取得エラー:', err);
+      });
+    } else {
+      // 未ログインの場合：LINEログインへリダイレクト
+      liff.login();
+    }
+  })
+  .catch(err => {
+    // ブラウザで直接開いた場合（開発・テスト時）
+    console.log('LIFF初期化エラー（ブラウザ確認中）:', err);
+    // demo_user_001 のままデモとして動作する
+  });
 </script>
 </body>
 </html>
