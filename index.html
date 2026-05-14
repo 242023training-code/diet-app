@@ -1081,8 +1081,33 @@
 </head>
 <body>
 
+<!-- ============ LOADING SCREEN ============ -->
+<div id="loading-screen" style="
+  position: fixed; inset: 0;
+  background: #F5F8F5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  gap: 24px;
+">
+  <svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="30" cy="30" r="26" fill="#E0F2E9" stroke="#4CAF7E" stroke-width="3"/>
+    <path d="M 30 18 Q 38 22 36 30 Q 34 38 26 38 Q 18 36 20 28 Q 22 20 30 18 Z" fill="#4CAF7E"/>
+  </svg>
+  <div style="font-family: 'Noto Sans JP', sans-serif; font-size: 16px; color: #6B7B6E; font-weight: 500;">
+    読み込み中...
+  </div>
+  <div style="display:flex; gap:8px;">
+    <div style="width:8px;height:8px;background:#4CAF7E;border-radius:50%;animation:bounce 1.2s infinite;"></div>
+    <div style="width:8px;height:8px;background:#4CAF7E;border-radius:50%;animation:bounce 1.2s 0.2s infinite;"></div>
+    <div style="width:8px;height:8px;background:#4CAF7E;border-radius:50%;animation:bounce 1.2s 0.4s infinite;"></div>
+  </div>
+</div>
+
 <!-- ============ SETUP SCREEN ============ -->
-<div class="screen active" id="screen-setup">
+<div class="screen" id="screen-setup">
   <div class="header">
     <span class="header-title">初回設定</span>
     <span class="header-badge">STEP 1 / 3</span>
@@ -2071,23 +2096,30 @@ document.querySelector('.bottom-nav').style.display = 'none';
 liff.init({ liffId: LIFF_ID })
   .then(() => {
     if (liff.isLoggedIn()) {
-      // LINEアプリ内で開いた場合：LINEユーザーIDを取得
       liff.getProfile().then(profile => {
         USER_ID = profile.userId;
         console.log('LINEユーザーID取得:', USER_ID);
+        // 初期化完了後にセットアップ画面を表示
+        initApp();
       }).catch(err => {
         console.log('プロフィール取得エラー:', err);
+        initApp();
       });
     } else {
-      // 未ログインの場合：LINEログインへリダイレクト
       liff.login();
     }
   })
   .catch(err => {
-    // ブラウザで直接開いた場合（開発・テスト時）
     console.log('LIFF初期化エラー（ブラウザ確認中）:', err);
-    // demo_user_001 のままデモとして動作する
+    // ブラウザの場合はそのまま起動
+    initApp();
   });
+
+function initApp() {
+  // セットアップ画面を表示（ローディング画面を非表示）
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('screen-setup').classList.add('active');
+}
 </script>
 </body>
 </html>
