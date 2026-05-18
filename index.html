@@ -2116,9 +2116,43 @@ liff.init({ liffId: LIFF_ID })
   });
 
 function initApp() {
-  // セットアップ画面を表示（ローディング画面を非表示）
-  document.getElementById('loading-screen').style.display = 'none';
-  document.getElementById('screen-setup').classList.add('active');
+  // GASからユーザーデータを読み込む
+  sendToGAS({ action: 'getUserData', userId: USER_ID })
+    .then(result => {
+      if (result && result.success && result.userData) {
+        // 設定済みの場合：データを復元してホーム画面へ
+        const u = result.userData;
+        state.gender       = u.gender === '女性' ? 'female' : 'male';
+        state.height       = Number(u.height);
+        state.age          = Number(u.age);
+        state.weight       = Number(u.weight);
+        state.targetWeight = Number(u.targetWeight);
+        state.activity     = Object.keys(activityLabel).find(k => activityLabel[k] === u.activityLabel) || 'low';
+        state.dailyCal     = Number(u.dailyCal);
+        state.dailyProtein = Number(u.dailyProtein);
+        state.bmr          = Number(u.bmr);
+        state.dailyFat     = Math.round(Number(u.dailyCal) * 0.25 / 9);
+        state.isSetupDone  = true;
+
+        updateMyData();
+        updateHomeStats();
+        buildDayCards();
+        setHomeDate();
+        initWorkout();
+        document.querySelector('.bottom-nav').style.display = 'flex';
+        document.getElementById('loading-screen').style.display = 'none';
+        showScreen('screen-home');
+      } else {
+        // 未設定の場合：設定画面を表示
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('screen-setup').classList.add('active');
+      }
+    })
+    .catch(() => {
+      // 通信エラーの場合：設定画面を表示
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('screen-setup').classList.add('active');
+    });
 }
 </script>
 </body>
